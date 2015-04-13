@@ -6,8 +6,6 @@ import json
 def vg_runcmd(action,dev_list,arg = ''):
     if action == 'list':
         cmd = 'vgs'
-    elif action == 'check':
-        cmd = 'pvchk'
     else:
         cmd = 'pv' + action
 

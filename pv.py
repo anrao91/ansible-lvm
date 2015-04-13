@@ -2,63 +2,44 @@
 
 from ansible.module_utils.basic import *
 import json
+from ast import literal_eval
 
-def pvcreate(cmd):
-       """Create a PV"""
-       rc,output,err = module.run_command(cmd)
-       if rc != 0:
-              module.fail_json(msg="Failed executing pv command.",rc=rc, err=err)
+def pv_run_cmd(module, action, *args):
+    # The arguments for pv commands
+    disks = args[0]
+    options = args[1]
+    # Create a PV
+    if action == 'create':
+        pvcreate_cmd = module.get_bin_path('pvcreate', True)
+        create_cmd = "%s %s %s"%(pvcreate_cmd, options,
+                         ' '.join(disks))
+        rc,output,err = module.run_command(create_cmd)
+        if rc != 0:
+           module.fail_json(msg="Failed executing pv command.",rc=rc, err=err)
+        print json.dumps({ "output": output })
 
-       print json.dumps({ "output": output })
+    # Remove a PV
+    elif action == 'remove':
+        pvremove_cmd = module.get_bin_path('pvremove', True)
+        cmd = "%s %s"%(pvremove_cmd, ' '.join(disks))
+        rc,output,err = module.run_command(cmd)
+        if rc != 0:
+            module.fail_json(msg="Failed executing pv command.",rc=rc, err=err)
 
-def pvremove(cmd):
-       """Remove a PV"""
-       rc,output,err = module.run_command(cmd)
-       if rc != 0:
-              module.fail_json(msg="Failed executing pv command.",rc=rc, err=err)
-
-       print json.dumps({ "output": output })
+        print json.dumps({ "output": output })
 
 def main():
        module = AnsibleModule(
               argument_spec = dict(
-                     lvm_cmd = dict(choices = ["pv","vg"]),
-                     option = dict(choices = ["create", "remove"]),
-                     disk = dict(required=True, type='list'),
-                     dasize = dict(required = True, type = 'str'),
-                     pvlist = dict(required = True, type = 'list'),
-                     force_remove_vg = dict(type = 'str'),
+                     action = dict(choices = ["create", "remove"]),
+                     disks = dict(),
+                     options = dict(type='str'),
               ),
        )
 
-       option = module.params['option']
-       disk = module.params['disk']
-       dasize = module.params['dasize']
-       lvm_cmd = module.params['lvm_cmd']
-
-       if option == 'create' and lvm_cmd == 'pv':
-               pvcmd = 'pvcreate'
-               pvcreate_cmd = module.get_bin_path(pvcmd, True)
-
-       elif option == 'remove' and lvm_cmd == 'pv':
-               pvcmd = 'pvremove'
-               pvremove_cmd = module.get_bin_path(pvcmd, True)
-
-       if option == 'create' and lvm_cmd == 'pv':
-               pvcmd = 'pvcreate'
-               pvcreate_cmd = module.get_bin_path(pvcmd, True)
-
-       elif option == 'remove' and lvm_cmd == 'pv':
-               pvcmd = 'pvremove'
-               pvremove_cmd = module.get_bin_path(pvcmd, True)
-
-       create_cmd = "%s %s"%(pvcreate_cmd, disk)
-       rem_cmd = "%s"%(pvremove_cmd)
-
-       pvcreate(create_cmd);
-       pvremove(rem_cmd);
-       vgcreate(vg_create_cmd);
-       vgremove(vg_rem_cmd);
-
+       action = module.params['action']
+       disks = literal_eval(module.params['disks'])
+       options = module.params['options']
+       pv_run_cmd(module, action, disks, options)
 
 main()

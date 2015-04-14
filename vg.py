@@ -3,14 +3,25 @@
 from ansible.module_utils.basic import *
 import json
 
-def vg_runcmd(action,dev_list,arg = ''):
+def vg_runcmd(action,*args):
+    dev_list = args[0]
+    pesize = args[1]
     if action == 'list':
         cmd = 'vgs'
-    else:
-        cmd = 'pv' + action
+    elif option == 'create':
+        vgcmd = 'vgcreate'
+        cmd = module.get_bin_path(vgcmd, True)
+        cmd += vgoptions + ['-s', str(pesize), vg_name] + dev_list
 
-    cmdpath = module.get_bin_path(cmd, True)
-    rc, _, err = module.run_command("%s %s %s"%(cmd, args))
+    elif option == 'remove':
+        vgcmd = 'pvremove'
+        cmd = module.get_bin_path(vgcmd, True)
+        cmd += vg_name
+    else:
+        cmd = 'vg' + action
+        cmd = module.get_bin_path(cmd, True)
+
+    rc, _, err = module.run_command("%s"%(cmd))
     print json.dumps({
     "output": err
     })
@@ -32,27 +43,18 @@ def main():
     dev_list = module.params['dev_list']
     pe_size = module.params['pe_size']
 
-''' Logic to check whether the vg name is already present -
-    if yes then create a new vg otherwise continue'''
+    #Logic to check whether the vg name is already present -
+    #if yes then create a new vg otherwise continue
 
-    op = subprocess.check_output('vg')
+    op = subprocess.check_output('vgs')
     final_op =  (op.split('\n'))[1].split(' ')
-    if final_op == vgname:
-        num = re.match('.*?([0-9]+)$', vgname).group(1)
+    if final_op == vg_name:
+        num = re.match('.*?([0-9]+)$', vg_name).group(1)
         num += 1
-        vgname += str(num)
+        vg_name += str(num)
 
 
-    if option == 'create':
-        vgcmd = 'vgcreate'
-        vgcreate_cmd = module.get_bin_path(vgcmd, True)
-        vgcreate_cmd += vgoptions + ['-s', str(pesize), vg_name] + dev_list
-
-        vgcmd = 'pvremove'
-        vgremove_cmd = module.get_bin_path(vgcmd, True)
-        vg_remove_cmd += vg_name
-    vgcreate(vgcreate_cmd)
-    vgremove(vg_remove_cmd);
+        vg_run_cmd(option,dev_list,pesize)
 
 
 main()

@@ -54,6 +54,31 @@ def vg_run_cmd(module,action,*args):
             "output": err
         })
 
+def vg_name_create(vg_name):
+    #final_op should have vg_name of the current pvs_list passed to it
+    final_op = subprocess.check_output(["pvs", "--noheadings", "-ovg_name"])
+    final_op = final_op.replace(' ','')
+    final_op = final_op.split('\n')
+    final_op = filter(None,final_op)
+    if vg_name in final_op:
+        if (re.match('.*?([0-9]+)$', vg_name)):
+            num = re.match('.*?([0-9]+)$', vg_name).group(1)
+            vg_name = vg_name.replace(num,'')
+            number = int(num)
+            number += 1
+            vg_name += str(number)
+        else:
+            vg_name += '1'
+    return vg_name
+
+def checkOutput(disks):
+    pvsout = subprocess.check_output(["pvs", "--noheadings", "-opv_name"])
+    pvs_list = pvsout.replace(' ','')
+    pvs_list = pvs_list.split('\n')
+    pvs_list.pop()
+    upvs_list = list(set(pvs_list) & set(disks))
+    return upvs_list
+
 def main():
     module = AnsibleModule(
     argument_spec = dict(
@@ -74,29 +99,5 @@ def main():
     #if yes then create a new vg otherwise continue
 
     vg_run_cmd(module,action,disks,options,vg_name)
-
-def vg_name_create(vg_name):
-    #final_op should have vg_name of the current pvs_list passed to it
-    final_op = subprocess.check_output(["pvs", "--noheadings", "-ovg_name"])
-    final_op = final_op.replace(' ','')
-    final_op = final_op.split('\n')
-    final_op = filter(None,final_op)
-    if vg_name in final_op:
-        if (re.match('.*?([0-9]+)$', vg_name)):
-            num = re.match('.*?([0-9]+)$', vg_name).group(1)
-            number = int(num)
-            number += 1
-            vg_name += str(number)
-        else:
-            vg_name += '1'
-    return vg_name
-
-def checkOutput(disks):
-    pvsout = subprocess.check_output(["pvs", "--noheadings", "-opv_name"])
-    pvs_list = pvsout.replace(' ','')
-    pvs_list = pvs_list.split('\n')
-    pvs_list.pop()
-    upvs_list = list(set(pvs_list) & set(disks))
-    return upvs_list
 
 main()

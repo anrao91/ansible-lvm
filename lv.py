@@ -2,8 +2,10 @@
 
 from ansible.module_utils.basic import *
 import json
+import sys
 from ast import literal_eval
-import name_create
+#sys.path.insert(name_create,"/home/anusha/Code/modules/name_create")
+#import name_create
 
 def lv_run_cmd(module, action, *args):
     # The arguments for lv commands
@@ -16,7 +18,8 @@ def lv_run_cmd(module, action, *args):
         upvs_list = checkOutput(disks,"pv")
         #Get the updated vg_list
         ldisks = getVgList(upvs_list)
-        lv_name = name_create.create(lv_name,"lv")
+        #lv_name = name_create.create(lv_name,"lv")
+        lv_name = lv_create(lv_name,"lv")
         lvcreate_cmd = module.get_bin_path('lvcreate', True)
         create_cmd = "%s %s %s"%(lvcreate_cmd, lv_name, options,
                          ' '.join(ldisks))
@@ -74,6 +77,24 @@ def checkOutput(disks,command):
     if command == "pv":
         ulvm_list = list(set(ulvm_list) & set(disks))
     return ulvm_list
+
+def lv_create(name):
+    #final_op should have vg_name or lv_name  of the current pvs_list or vgs_list passed to it
+    final_op = subprocess.check_output(["vgs", "--noheadings", "-olv_name"])
+
+    final_op = final_op.replace(' ','')
+    final_op = final_op.split('\n')
+    final_op = filter(None,final_op)
+    if name in final_op:
+        if (re.match('.*?([0-9]+)$', name)):
+            num = re.match('.*?([0-9]+)$', name).group(1)
+            name = name.replace(num,'')
+            number = int(num)
+            number += 1
+            name += str(number)
+        else:
+            name += '1'
+    return name
 
 def main():
        module = AnsibleModule(

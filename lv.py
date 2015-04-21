@@ -3,6 +3,7 @@
 from ansible.module_utils.basic import *
 import json
 from ast import literal_eval
+import name_create
 
 def lv_run_cmd(module, action, *args):
     # The arguments for lv commands
@@ -15,6 +16,7 @@ def lv_run_cmd(module, action, *args):
         upvs_list = checkOutput(disks,"pv")
         #Get the updated vg_list
         ldisks = getVgList(upvs_list)
+        lv_name = name_create.create(lv_name,"lv")
         lvcreate_cmd = module.get_bin_path('lvcreate', True)
         create_cmd = "%s %s %s"%(lvcreate_cmd, lv_name, options,
                          ' '.join(ldisks))

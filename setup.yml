@@ -9,19 +9,19 @@
 
   tasks:
   # Create pv on all the disks
-  - name: Create Physical Volume on all the nodes
-    pv: action=create disks="{{ bricks }}" options="--dataalignment 1280k"
+  #- name: Create Physical Volume on all the nodes
+  #  pv: action=create disks="{{ bricks }}" options="--dataalignment 1280k"
     #with_items: bricks
 
-  # Create vg on the disks
-  #  - name: Create volume group on the disks
-  ##vg: action=create device={{ item }} options="--physicalextent-size 128k"
-  #    namepattern="RHS_vg"
+  #Create vg on the disks
+  #- name: Create volume group on the disks
+  #  vg: action=create vg_name=RHS_vg disks="{{ bricks }}" options=" --physicalextentsize 128k"
   #with_items: bricks
 
   # Create lv on the disk
   #- name: Create logical volumes on the given vg
-  #  lv: action=create device={{ time }}
+  #  lv: action=create lv_name=RHS_pool disks="{{ bricks }}"
+  #      options=" -L 100M"
   #  with_items: bricks
 
   # - name: Create a VG with the given disks
@@ -56,7 +56,10 @@
 
   # # Create vg for the physical volumes
 
-  # # Create lv and thinpool
+  # Create lv and thinpool
+  - name: Create logical volumes and thin pool
+    lv: action=convert data_align=1280k vg_name=RHS_vg1 pool_name=RHS_pool1
+        pool2_name=RHS_pool2 options="--poolmetadataspare n"
 
   # - debug: msg="{{ pvsize.stdout }}"
   # - debug: msg="{{ metadatasize.stdout }}"

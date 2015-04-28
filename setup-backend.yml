@@ -1,0 +1,4 @@
+---
+- include: pvcreate.yml
+- include: vgcreate.yml
+- include: lvcreate.yml
